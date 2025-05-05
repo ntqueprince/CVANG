@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📸 Screenshot Share</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .upload-section {
+      margin: 20px 0;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      margin: 5px;
+      padding: 8px;
+    }
+
+    button {
+      padding: 8px 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    #gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .image-card {
+      background: white;
+      padding: 10px;
+      margin: 10px;
+      border-radius: 10px;
+      width: 250px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .image-card img {
+      width: 100%;
+      border-radius: 5px;
+    }
+
+    .comment {
+      margin-top: 10px;
+      color: #555;
+    }
+
+    .timer {
+      font-size: 12px;
+      color: red;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📸 Screenshot Share</h1>
+
+  <div class="upload-section">
+    <input type="file" id="imageInput" accept="image/*">
+    <input type="text" id="commentInput" placeholder="Enter your comment">
+    <button onclick="uploadImage()">Upload</button>
+  </div>
+
+  <div id="gallery"></div>
+
+  <script>
+    const apiKey = "7b8c6a27780b93e5d233d69f5c6e3a51";
+
+    function uploadImage() {
+      const imageInput = document.getElementById('imageInput');
+      const commentInput = document.getElementById('commentInput');
+
+      if (imageInput.files.length === 0) {
+        alert("Please select an image.");
+        return;
+      }
+
+      const file = imageInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function() {
+        const base64Image = reader.result.split(',')[1];
+        const formData = new FormData();
+        formData.append("image", base64Image);
+
+        fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          const imageUrl = data.data.url;
+          showImage(imageUrl, commentInput.value);
+          imageInput.value = "";
+          commentInput.value = "";
+        })
+        .catch(() => {
+          alert("Image upload failed.");
+        });
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function showImage(url, comment) {
+      const gallery = document.getElementById('gallery');
+      const card = document.createElement('div');
+      card.className = "image-card";
+
+      const img = document.createElement('img');
+      img.src = url;
+
+      const commentDiv = document.createElement('div');
+      commentDiv.className = "comment";
+      commentDiv.innerText = comment;
+
+      const timer = document.createElement('div');
+      timer.className = "timer";
+      let timeLeft = 300;
+      timer.innerText = `Removing in: ${formatTime(timeLeft)}`;
+
+      card.appendChild(img);
+      card.appendChild(commentDiv);
+      card.appendChild(timer);
+      gallery.prepend(card);
+
+      const interval = setInterval(() => {
+        timeLeft--;
+        timer.innerText = `Removing in: ${formatTime(timeLeft)}`;
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          gallery.removeChild(card);
+        }
+      }, 1000);
+    }
+
+    function formatTime(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+  </script>
+
+</body>
+</html>
